@@ -5,7 +5,7 @@ export class AppService {
   getHealth() {
     return {
       status: "ok",
-      service: "helioaudit-nestjs",
+      service: "helioaudit-api",
     };
   }
 }
