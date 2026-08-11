@@ -1,0 +1,26 @@
+# HelioAudit scanner config — extends Gitleaks defaults with false-positive allowlists.
+# Applied to every repo scan; scanned repositories do not need their own config.
+
+title = "HelioAudit Gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Example and template environment files (placeholders, not production secrets)"
+paths = [
+  '''(?i)(^|/)\.env\.example$''',
+  '''(?i)(^|/)\.env\.sample$''',
+  '''(?i)(^|/)\.env\.template$''',
+  '''(?i)(^|/)\.env\.local\.example$''',
+  '''(?i)(^|/)\.env\.defaults$''',
+]
+
+[[allowlists]]
+description = "Documentation files with badge URLs and sample tokens"
+paths = [
+  '''(?i)(^|/)README\.md$''',
+  '''(?i)(^|/)CHANGELOG\.md$''',
+  '''(?i)(^|/)CONTRIBUTING\.md$''',
+  '''(?i)(^|/)docs/.+\.md$''',
+]
