@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1 — install deps + build Nest API
 # -----------------------------------------------------------------------------
-FROM node:20-bookworm AS builder
+FROM node:26-bookworm AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN npm run build && npm prune --omit=dev
 # -----------------------------------------------------------------------------
 # Stage 2 — runtime with scanner CLIs (gitleaks + semgrep)
 # -----------------------------------------------------------------------------
-FROM node:20-bookworm AS runner
+FROM node:26-bookworm AS runner
 
 # Host tools required by quick-scan (clone, unzip, npm audit, install-scanners.sh)
 RUN apt-get update \
