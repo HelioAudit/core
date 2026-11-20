@@ -2,6 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join, relative } from "node:path";
 import type { RawFinding } from "../../types";
 import { log } from "../../utils/logger";
+import type { RepoIgnoreMatcher } from "../../utils/git-ignore";
 import type { ScannerRunResult } from "./types";
 
 /** Longest suffix first so `.env.example` matches before `.example`. */
@@ -93,6 +94,7 @@ function isCommentLine(line: string): boolean {
 async function walkFiles(
   dir: string,
   repoPath: string,
+  gitignore: RepoIgnoreMatcher | null,
   files: string[] = []
 ): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -100,10 +102,12 @@ async function walkFiles(
     if (entry.name.startsWith(".")) continue;
     if (SKIP_DIRS.has(entry.name)) continue;
     const full = join(dir, entry.name);
+    const rel = relative(repoPath, full).replace(/\\/g, "/");
+    if (gitignore?.ignoresRepoRelativePath(rel)) continue;
+
     if (entry.isDirectory()) {
-      await walkFiles(full, repoPath, files);
+      await walkFiles(full, repoPath, gitignore, files);
     } else if (entry.isFile() && hasScannableExtension(entry.name)) {
-      const rel = relative(repoPath, full);
       if (!shouldSkipFile(rel)) files.push(full);
     }
   }
@@ -121,14 +125,17 @@ function pushFinding(
   findings.push(finding);
 }
 
-export async function runCustomRules(repoPath: string): Promise<ScannerRunResult> {
+export async function runCustomRules(
+  repoPath: string,
+  gitignore: RepoIgnoreMatcher | null = null
+): Promise<ScannerRunResult> {
   const start = Date.now();
   const name = "custom_rules";
   const findings: RawFinding[] = [];
   const seen = new Set<string>();
 
   log.info("scanner:custom_rules", "Starting in-house heuristic scan", { repoPath });
-  const files = await walkFiles(repoPath, repoPath);
+  const files = await walkFiles(repoPath, repoPath, gitignore);
 
   for (const filePath of files) {
     let content: string;
