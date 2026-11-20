@@ -31,7 +31,7 @@ export async function countFiles(dir: string): Promise<number> {
     async function walk(current: string): Promise<void> {
         const entries = await readdir(current, { withFileTypes: true });
         for (const entry of entries) {
-            if (entry.name === ".git" || entry.name === "node_modules") continue;
+            if (entry.name.startsWith(".") || entry.name === "node_modules") continue;
             const full = join(current, entry.name);
             if (entry.isDirectory()) {
                 await walk(full);
