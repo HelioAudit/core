@@ -9,6 +9,7 @@ import { runAllScannersWithProgress } from "./scanner/index.js";
 import { parseRepoUrl } from "../utils/parseRepoUrl.js";
 import { log } from "../utils/logger.js";
 import { limitFindingsForPublic } from "../utils/publicReport.js";
+import { removeHiddenDirectories } from "../utils/hiddenPaths.js";
 import { countFiles, createWorkDir, removeWorkDir } from "../utils/tempDir.js";
 
 export type ScanProgressCallback = (update: ScanProgressUpdate) => void;
@@ -124,10 +125,13 @@ export async function runRepositoryScan(
 
         emit(SCAN_PROGRESS.DOWNLOAD);
 
+        const hiddenDirsRemoved = await removeHiddenDirectories(repoPath);
+
         log.info("scan:download", "Repository downloaded", {
             repository: parsed.fullName,
             durationMs: downloadMs,
             repoPath,
+            hiddenDirsRemoved,
         });
 
         const parallelStart = Date.now();

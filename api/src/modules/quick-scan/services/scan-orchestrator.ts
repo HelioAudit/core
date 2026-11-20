@@ -10,6 +10,7 @@ import { runAllScannersWithProgress } from "./scanner/index";
 import { parseRepoUrl } from "../utils/parse-repo-url";
 import { log } from "../utils/logger";
 import { limitFindingsForPublic } from "../utils/public-report";
+import { removeHiddenDirectories } from "../utils/hidden-paths";
 import { countFiles, createWorkDir, removeWorkDir } from "../utils/temp-dir";
 
 export type ScanProgressCallback = (update: ScanProgressUpdate) => void;
@@ -127,10 +128,13 @@ export class ScanOrchestratorService {
 
             emit(SCAN_PROGRESS.DOWNLOAD);
 
+            const hiddenDirsRemoved = await removeHiddenDirectories(repoPath);
+
             log.info("scan:download", "Repository downloaded", {
                 repository: parsed.fullName,
                 durationMs: downloadMs,
                 repoPath,
+                hiddenDirsRemoved,
             });
 
             const parallelStart = Date.now();
