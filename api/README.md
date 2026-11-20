@@ -23,3 +23,8 @@ curl http://localhost:3001/health
 | `PORT` | `3001` | HTTP server port |
 
 Copy `.env.example` to `.env.local` when needed.
+
+## Deployment
+```bash
+docker compose -p helioaudit-api up -d --build
+```

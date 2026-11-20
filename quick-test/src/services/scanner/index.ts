@@ -5,7 +5,6 @@ import {
     SCAN_PROGRESS,
     type ScanProgressCallback,
 } from "../../constants/scanProgress.js";
-import { filterFindingsOutsideHiddenDirs } from "../../utils/hiddenPaths.js";
 import { log } from "../../utils/logger.js";
 import { runCustomRules } from "./customRules.js";
 import { runGitleaks } from "./gitleaks.js";
@@ -149,9 +148,7 @@ export async function runAllScannersWithProgress(
     const npmResult = results.find((r) => r.report.name === "npm_audit");
     const dependencyCount = (npmResult?.meta?.dependencyCount as number | undefined) ?? 0;
 
-    const merged = filterFindingsOutsideHiddenDirs(
-        dedupeFindings(results.flatMap((r) => r.findings))
-    );
+    const merged = dedupeFindings(results.flatMap((r) => r.findings));
     const findings = assignIds(merged);
 
     log.info("scanner", "Scan complete", {
