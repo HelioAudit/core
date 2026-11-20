@@ -5,6 +5,7 @@ import {
     SCAN_PROGRESS,
     type ScanProgressCallback,
 } from "../../constants/scan-progress";
+import { filterFindingsByGitignore, loadRepoGitignoreMatcher } from "../../utils/git-ignore";
 import { filterFindingsOutsideHiddenDirs } from "../../utils/hidden-paths";
 import { log } from "../../utils/logger";
 import { runCustomRules } from "./custom-rules";
@@ -107,6 +108,13 @@ export async function runAllScannersWithProgress(
     onProgress?: ScanProgressCallback
 ): Promise<ScanResult> {
     const start = Date.now();
+    const gitignore = await loadRepoGitignoreMatcher(repoPath);
+    if (gitignore && gitignore.patternCount > 0) {
+        log.info("scanner:gitignore", "Respecting .gitignore patterns", {
+            patternCount: gitignore.patternCount,
+        });
+    }
+
     log.info("scanner", "Running all scanners in parallel", { repoPath });
 
     let completedScanners = 0;
@@ -132,7 +140,7 @@ export async function runAllScannersWithProgress(
         runWithProgress(() => runGitleaks(repoPath)),
         runWithProgress(() => runSemgrep(repoPath)),
         runWithProgress(() => runNpmAudit(repoPath)),
-        runWithProgress(() => runCustomRules(repoPath)),
+        runWithProgress(() => runCustomRules(repoPath, gitignore)),
     ]);
 
     const scannersMs = Date.now() - start;
@@ -149,8 +157,10 @@ export async function runAllScannersWithProgress(
     const npmResult = results.find((r) => r.report.name === "npm_audit");
     const dependencyCount = (npmResult?.meta?.dependencyCount as number | undefined) ?? 0;
 
-    const merged = filterFindingsOutsideHiddenDirs(
-        dedupeFindings(results.flatMap((r) => r.findings))
+    const merged = filterFindingsByGitignore(
+        repoPath,
+        gitignore,
+        filterFindingsOutsideHiddenDirs(dedupeFindings(results.flatMap((r) => r.findings)))
     );
     const findings = assignIds(merged);
 
