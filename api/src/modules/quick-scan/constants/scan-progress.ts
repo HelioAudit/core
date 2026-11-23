@@ -2,10 +2,10 @@
 export const SCAN_PROGRESS_STEPS = [
     "Checking GitHub repository…",
     "Downloading source code…",
-    "Running Gitleaks (secrets)…",
-    "Running Semgrep (SAST)…",
-    "Running npm audit…",
-    "Applying custom rules…",
+    "Scanning for secrets…",
+    "Analyzing code for vulnerabilities…",
+    "Checking dependencies…",
+    "Applying security rules…",
     "Merging findings…",
 ] as const;
 
