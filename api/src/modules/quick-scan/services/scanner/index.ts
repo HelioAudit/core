@@ -121,7 +121,7 @@ export async function runAllScannersWithProgress(
 
     const emitScannerProgress = (reportName: string) => {
         completedScanners += 1;
-        const step = SCANNER_STEP_BY_NAME[reportName] ?? "Running security scanners…";
+        const step = SCANNER_STEP_BY_NAME[reportName] ?? "Running security analysis…";
         onProgress?.({
             step,
             progress: scannerCompletionProgress(completedScanners),
