@@ -16,6 +16,29 @@ function githubHeaders(): HeadersInit {
     return headers;
 }
 
+export type FetchRepoMetaResult =
+    | { ok: true; meta: GitHubRepoMeta }
+    | { ok: false; reason: "not_found" | "private" | "error"; message: string };
+
+/**
+ * Check whether a GitHub user or organization exists.
+ * Used to distinguish missing owners from inaccessible (likely private) repos.
+ * GitHub returns 404 for both private and non-existent repos when the caller
+ * has no access, so an existing owner is our best signal for a private repo.
+ * @param owner - GitHub username or organization login
+ * @returns True when the owner account exists
+ */
+async function githubOwnerExists(owner: string): Promise<boolean> {
+    try {
+        const res = await fetch(`${GITHUB_API}/users/${owner}`, {
+            headers: githubHeaders(),
+        });
+        return res.ok;
+    } catch {
+        return false;
+    }
+}
+
 /**
  * Fetch the repository metadata
  * @param owner - The owner of the repository
@@ -25,25 +48,47 @@ function githubHeaders(): HeadersInit {
 export async function fetchRepoMeta(
     owner: string,
     repo: string
-): Promise<{ ok: true; meta: GitHubRepoMeta } | { ok: false; reason: "not_found" | "forbidden" | "error"; message: string }> {
+): Promise<FetchRepoMetaResult> {
     const url = `${GITHUB_API}/repos/${owner}/${repo}`;
 
     try {
         const res = await fetch(url, { headers: githubHeaders() });
 
         if (res.status === 404) {
-            return { ok: false, reason: "not_found", message: "Repository not found. Check the URL and try again." };
+            // Inaccessible private repos also return 404. If the owner exists,
+            // treat as private so the UI can show the contact CTA.
+            const ownerExists = await githubOwnerExists(owner);
+            if (ownerExists) {
+                return {
+                    ok: false,
+                    reason: "private",
+                    message:
+                        "This repository appears to be private. Please contact us if you want to scan a private repo.",
+                };
+            }
+            return {
+                ok: false,
+                reason: "not_found",
+                message: "Repository not found. Please check the URL and try again.",
+            };
         }
 
         if (res.status === 403) {
             const body = await res.text();
             const rateLimited = body.toLowerCase().includes("rate limit");
+            if (rateLimited) {
+                return {
+                    ok: false,
+                    reason: "error",
+                    message:
+                        "GitHub API rate limit exceeded. Set GITHUB_TOKEN or try again later.",
+                };
+            }
             return {
                 ok: false,
-                reason: "error",
-                message: rateLimited
-                    ? "GitHub API rate limit exceeded. Set GITHUB_TOKEN or try again later."
-                    : "Access to this repository was denied.",
+                reason: "private",
+                message:
+                    "This repository appears to be private. Please contact us if you want to scan a private repo.",
             };
         }
 

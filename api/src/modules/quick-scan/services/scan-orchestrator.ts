@@ -70,6 +70,17 @@ export class ScanOrchestratorService {
         });
 
         if (!metaResult.ok) {
+            if (metaResult.reason === "private") {
+                return {
+                    httpStatus: 200,
+                    body: {
+                        repository: parsed.fullName,
+                        status: "private_repo",
+                        message: metaResult.message,
+                    },
+                };
+            }
+
             const httpStatus = metaResult.reason === "not_found" ? 404 : 502;
             const body: ScanResponse =
                 metaResult.reason === "not_found"
@@ -95,7 +106,7 @@ export class ScanOrchestratorService {
                     repository: metaResult.meta.fullName,
                     status: "private_repo",
                     message:
-                        "This repository is private. Contact us to scan it, or connect your GitHub account.",
+                        "This repository is private. Please contact us if you want to scan a private repo.",
                 },
             };
         }
